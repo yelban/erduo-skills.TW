@@ -25,7 +25,7 @@ graph TD
     subgraph Execution Layer [SubAgent Layer]
         WorkerA[Worker A<br>WebFetch]
         WorkerB[Worker B<br>WebFetch]
-        Browser[Browser Worker<br>Headless Chrome]
+        Browser[Browser Worker<br>claude-in-chrome]
     end
 
     Master -->|Dispatch Tier 1| WorkerA
@@ -51,8 +51,8 @@ graph TD
 - **Dynamic Scheduling**:
   - Uses an "Early Stopping" mechanism: if enough high-quality items are found (e.g., 20 items), it stops fetching to save resources.
 
-- **Headless Browser Support**:
-  - Handles complex, JS-rendered pages (e.g., ProductHunt) using MCP Chrome DevTools.
+- **Browser Automation**:
+  - Handles JS-rendered pages (e.g., ProductHunt) using agent-browser (preferred) or claude-in-chrome.
 
 ### 📄 Output Example
 
@@ -82,19 +82,55 @@ Reports are generated in structured Markdown format, stored in the `NewsReport/`
 └── README_EN.md      # Project documentation (English)
 ```
 
-## 🛠 Usage
+## 📋 Requirements
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/Start-to-DJ/erduo-skills.git
-    cd erduo-skills
-    ```
+- **Claude Code** or MCP-compatible Agent environment
+- **agent-browser skill** (optional, preferred for JS-rendered pages)
+- **claude-in-chrome MCP** (optional, fallback for agent-browser)
 
-2.  **Run with Agent**
-    Load this repository into your Agent environment (e.g., Claude Desktop, Zed with MCP). The Agent will automatically recognize the `daily-news-report` skill.
+## 🛠 Installation & Usage
 
-    *Prompt Example:*
-    > "Generate today's news report."
+### Option 1: Direct Usage (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/yelban/erduo-skills.TW.git
+cd erduo-skills.TW
+
+# Install agent-browser skill (for JS-rendered page fetching)
+mkdir -p .claude/skills
+cp -r $(npm root -g)/agent-browser/skills/agent-browser .claude/skills/
+
+# Start Claude Code
+claude
+```
+
+Claude Code will automatically recognize configurations under `.claude/` directory.
+
+### Option 2: Integrate into Existing Project
+
+```bash
+# In your project directory
+mkdir -p .claude/agents .claude/skills skills
+
+# Copy agent definition
+cp /path/to/erduo-skills/.claude/agents/worker.md .claude/agents/
+
+# Copy skill
+cp -r /path/to/erduo-skills/skills/daily-news-report skills/
+
+# Install agent-browser skill
+cp -r $(npm root -g)/agent-browser/skills/agent-browser .claude/skills/
+
+# Create output directory
+mkdir -p NewsReport
+```
+
+### Run the Skill
+
+After starting Claude Code, simply type:
+
+> "Generate today's news report."
 
 ## 🤝 Contributing
 

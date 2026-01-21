@@ -1,31 +1,31 @@
-# Erduo Skills / 耳朵技能库
+# Erduo Skills / 耳朵技能庫
 
 [English](README_EN.md)
 
-> 为 AI Agent 赋能，提供结构化能力与智能工作流。
+> 為 AI Agent 賦能，提供結構化能力與智慧工作流。
 
-## 📖 简介
+## 📖 簡介
 
-**Erduo Skills** 是一个专门用于管理 AI Agent 智能技能的仓库。它作为一个知识库和执行框架，使 Agent 能够执行自动新闻报道、数据分析等复杂任务。
+**Erduo Skills** 是一個專門用於管理 AI Agent 智慧技能的倉庫。它作為一個知識庫和執行框架，使 Agent 能夠執行自動新聞報道、資料分析等複雜任務。
 
 ---
 
-## ✨ 精选技能：每日日报
+## ✨ 精選技能：每日日報
 
-**每日日报** 是一个高级技能，旨在自动从多个来源抓取、筛选并总结高质量的技术新闻。
+**每日日報** 是一個高階技能，旨在自動從多個來源抓取、篩選並總結高質量的技術新聞。
 
-### 🏗 核心架构
+### 🏗 核心架構
 
-该技能采用 **Master-Worker** 架构，包含智能调度器和专用子 Agent。
+該技能採用 **Master-Worker** 架構，包含智慧排程器和專用子 Agent。
 
 ```mermaid
 graph TD
-    User((User)) -->|Start| Master[Master Agent<br>调度/监控/决策]
+    User((User)) -->|Start| Master[Master Agent<br>排程/監控/決策]
     
-    subgraph Execution Layer [SubAgent 执行层]
+    subgraph Execution Layer [SubAgent 執行層]
         WorkerA[Worker A<br>WebFetch]
         WorkerB[Worker B<br>WebFetch]
-        Browser[Browser Worker<br>Headless Chrome]
+        Browser[Browser Worker<br>claude-in-chrome]
     end
 
     Master -->|Dispatch Tier 1| WorkerA
@@ -36,69 +36,105 @@ graph TD
     WorkerB -->|Result| Master
     Browser -->|Result| Master
 
-    Master -->|Filter & Dedup| Report[Generate Report<br>生成日报]
-    Master -->|Update| Cache[Smart Cache<br>智能缓存]
+    Master -->|Filter & Dedup| Report[Generate Report<br>生成日報]
+    Master -->|Update| Cache[Smart Cache<br>智慧快取]
 ```
 
 ### 🚀 核心特性
 
 - **多源抓取**:
-  - 聚合 HackerNews, HuggingFace Papers 等优质源。
+  - 聚合 HackerNews, HuggingFace Papers 等優質源。
   
-- **智能筛选**:
-  - 筛选高质量技术内容，排除营销软文。
+- **智慧篩選**:
+  - 篩選高質量技術內容，排除營銷軟文。
   
-- **动态调度**:
-  - 采用“早停机制”：一旦抓取到足够的高质量条目（如 20 条），即停止抓取以节省资源。
+- **動態排程**:
+  - 採用“早停機制”：一旦抓取到足夠的高質量條目（如 20 條），即停止抓取以節省資源。
 
-- **无头浏览器支持**:
-  - 使用 MCP Chrome DevTools 处理复杂的 JS 渲染页面（如 ProductHunt）。
+- **瀏覽器自動化**:
+  - 使用 agent-browser（首選）或 claude-in-chrome 處理 JS 渲染頁面（如 ProductHunt）。
 
-### 📄 输出示例
+### 📄 輸出示例
 
-日报以结构化 Markdown 格式生成，存储在 `NewsReport/` 目录下。
+日報以結構化 Markdown 格式生成，儲存在 `NewsReport/` 目錄下。
 
 > **Daily News Report (2024-03-21)**
 >
-> **1. 文章标题**
-> - **摘要**: 文章内容的简要总结...
-> - **要点**: 
->   1. 要点一
->   2. 要点二
-> - **来源**: [链接](...) 
-> - **评分**: ⭐⭐⭐⭐⭐
+> **1. 文章標題**
+> - **摘要**: 文章內容的簡要總結...
+> - **要點**: 
+>   1. 要點一
+>   2. 要點二
+> - **來源**: [連結](...) 
+> - **評分**: ⭐⭐⭐⭐⭐
 
 ---
 
-## 📂 项目结构
+## 📂 專案結構
 
 ```bash
 ├── .claude/
-│   └── agents/       # Agent 定义 (Personas & Prompts)
-├── skills/           # 技能实现 (例如 daily-news-report)
-│   └── daily-news-report/  # 每日日报技能
-├── NewsReport/       # 生成的日报存档
-├── README.md         # 项目文档 (默认为中文)
-└── README_EN.md      # 英文项目文档
+│   └── agents/       # Agent 定義 (Personas & Prompts)
+├── skills/           # 技能實現 (例如 daily-news-report)
+│   └── daily-news-report/  # 每日日報技能
+├── NewsReport/       # 生成的日報存檔
+├── README.md         # 專案文件 (預設為中文)
+└── README_EN.md      # 英文專案文件
 ```
 
-## 🛠 使用方法
+## 📋 環境需求
 
-1.  **克隆仓库**
-    ```bash
-    git clone https://github.com/Start-to-DJ/erduo-skills.git
-    cd erduo-skills
-    ```
+- **Claude Code** 或支援 MCP 的 Agent 環境
+- **agent-browser skill**（可選，JS 渲染頁面抓取首選）
+- **claude-in-chrome MCP**（可選，agent-browser 的 fallback）
 
-2.  **使用 Agent 运行**
-    将此仓库加载到您的 Agent 环境中（例如 Claude Desktop 或支持 MCP 的 Zed）。Agent 将自动识别 `daily-news-report` 技能。
+## 🛠 安裝與使用
 
-    *提示词示例:*
-    > “生成今天的日报。”
+### 方式 1：直接使用（推薦）
 
-## 🤝 贡献指南
+```bash
+# 克隆專案
+git clone https://github.com/yelban/erduo-skills.TW.git
+cd erduo-skills.TW
 
-欢迎贡献！如果您有新的技能想法，请参考 `.claude/skills` 目录下的示例。
+# 安裝 agent-browser skill（用於 JS 渲染頁面抓取）
+mkdir -p .claude/skills
+cp -r $(npm root -g)/agent-browser/skills/agent-browser .claude/skills/
+
+# 啟動 Claude Code
+claude
+```
+
+Claude Code 會自動識別 `.claude/` 目錄下的配置。
+
+### 方式 2：整合到現有專案
+
+```bash
+# 在你的專案目錄
+mkdir -p .claude/agents .claude/skills skills
+
+# 複製 agent 定義
+cp /path/to/erduo-skills/.claude/agents/worker.md .claude/agents/
+
+# 複製技能
+cp -r /path/to/erduo-skills/skills/daily-news-report skills/
+
+# 安裝 agent-browser skill
+cp -r $(npm root -g)/agent-browser/skills/agent-browser .claude/skills/
+
+# 建立輸出目錄
+mkdir -p NewsReport
+```
+
+### 執行技能
+
+啟動 Claude Code 後，直接輸入：
+
+> "生成今天的日報。"
+
+## 🤝 貢獻指南
+
+歡迎貢獻！如果您有新的技能想法，請參考 `.claude/skills` 目錄下的示例。
 
 ---
 
