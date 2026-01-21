@@ -3,29 +3,109 @@
   "description": "Daily News Report 快取檔案，用於避免重複抓取和跟蹤歷史表現",
 
   "last_run": {
-    "date": "2026-01-21",
+    "date": "2026-01-22",
     "duration_seconds": 180,
-    "items_collected": 20,
+    "items_collected": 21,
     "items_published": 20,
-    "sources_used": ["hn", "hf_papers", "james_clear", "fs_blog", "scotthyoung"]
+    "sources_used": ["hn", "hf_papers", "one_useful_thing", "paul_graham", "fs_blog", "hackernoon_pm", "scotthyoung"],
+    "early_stop_triggered": true,
+    "tiers_used": [1, 2]
   },
 
   "source_stats": {
     "_comment": "記錄每個源的歷史表現，用於動態調整優先順序",
     "hn": {
-      "total_fetches": 0,
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 4,
+      "avg_quality_score": 4.0,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
+    },
+    "hf_papers": {
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 4,
+      "avg_quality_score": 4.75,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
+    },
+    "one_useful_thing": {
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 3,
+      "avg_quality_score": 4.33,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
+    },
+    "paul_graham": {
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 4,
+      "avg_quality_score": 4.25,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
+    },
+    "james_clear": {
+      "total_fetches": 1,
       "success_count": 0,
       "avg_items_per_fetch": 0,
       "avg_quality_score": 0,
-      "last_fetch": null,
-      "last_success": null
+      "last_fetch": "2026-01-22",
+      "last_success": null,
+      "last_error": "404 - 無法存取個別期刊內容"
+    },
+    "fs_blog": {
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 1,
+      "avg_quality_score": 4.0,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
+    },
+    "hackernoon_pm": {
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 3,
+      "avg_quality_score": 4.33,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
+    },
+    "scotthyoung": {
+      "total_fetches": 1,
+      "success_count": 1,
+      "avg_items_per_fetch": 2,
+      "avg_quality_score": 5.0,
+      "last_fetch": "2026-01-22",
+      "last_success": "2026-01-22"
     }
   },
 
   "url_cache": {
     "_comment": "已處理的 URL 快取，避免重複收錄",
     "_ttl_hours": 168,
-    "entries": {}
+    "entries": {
+      "https://github.com/anthropics/original_performance_takehome": "2026-01-22",
+      "https://github.com/ChartGPU/ChartGPU": "2026-01-22",
+      "https://skip.dev/blog/skip-is-free/": "2026-01-22",
+      "https://huggingface.co/papers/2601.12993": "2026-01-22",
+      "https://huggingface.co/papers/2601.14192": "2026-01-22",
+      "https://huggingface.co/papers/2601.11655": "2026-01-22",
+      "https://huggingface.co/papers/2601.13836": "2026-01-22",
+      "https://www.oneusefulthing.org/p/gpt-5-it-just-does-stuff": "2026-01-22",
+      "https://www.oneusefulthing.org/p/using-ai-right-now-a-quick-guide": "2026-01-22",
+      "https://www.oneusefulthing.org/p/an-opinionated-guide-to-using-ai": "2026-01-22",
+      "https://paulgraham.com/greatwork.html": "2026-01-22",
+      "https://paulgraham.com/field.html": "2026-01-22",
+      "https://paulgraham.com/goodwriting.html": "2026-01-22",
+      "https://paulgraham.com/do.html": "2026-01-22",
+      "https://fs.blog/brain-food/january-18-2026/": "2026-01-22",
+      "https://hackernoon.com/why-good-products-feel-broken": "2026-01-22",
+      "https://hackernoon.com/ideaops-why-every-request-is-a-company-asset-in-product-development": "2026-01-22",
+      "https://hackernoon.com/how-we-went-from-0-followers-to-1-product-of-the-day-on-product-hunt-in-3-weeks": "2026-01-22",
+      "https://www.scotthyoung.com/blog/2026/01/14/manage-energy-not-time/": "2026-01-22",
+      "https://www.scotthyoung.com/blog/2026/01/05/how-to-learn-taste/": "2026-01-22"
+    }
   },
 
   "content_hashes": {
@@ -36,6 +116,28 @@
 
   "article_history": {
     "_comment": "已收錄文章的簡要記錄",
-    "2026-01-21": []
+    "2026-01-21": [],
+    "2026-01-22": [
+      "GPT-5: It Just Does Stuff",
+      "ChartGPU – WebGPU-powered charting library",
+      "Being-H0.5: Scaling Human-Centric Robot Learning",
+      "Toward Efficient Agents: Memory, Tool learning, and Planning",
+      "LLM-based Issue Resolution in Software Engineering",
+      "How to Do Great Work",
+      "Why Good Products Feel Broken",
+      "Manage Your Energy, Not Your Time",
+      "How to Learn Taste",
+      "Anthropic's Original Take Home Assignment",
+      "Skip Is Now Free and Open Source",
+      "FutureOmni: Evaluating Future Forecasting",
+      "Using AI Right Now: A Quick Guide",
+      "An Opinionated Guide to Using AI",
+      "The Shape of the Essay Field",
+      "Good Writing",
+      "What to Do",
+      "Brain Food #664: An Extra Gear",
+      "IdeaOps: Why Every Request is a Company Asset",
+      "From 0 to #1 Product of the Day on Product Hunt"
+    ]
   }
 }
