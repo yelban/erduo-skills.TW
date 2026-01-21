@@ -52,7 +52,9 @@ graph TD
   - Uses an "Early Stopping" mechanism: if enough high-quality items are found (e.g., 20 items), it stops fetching to save resources.
 
 - **Browser Automation**:
-  - Handles JS-rendered pages (e.g., ProductHunt) using agent-browser (preferred) or claude-in-chrome.
+  - Auto-selects tool based on `requires_real_browser` field:
+    - `false`: Uses agent-browser (Headless, faster)
+    - `true`: Uses claude-in-chrome (Real browser, bypasses Cloudflare)
 
 ### 📄 Output Example
 

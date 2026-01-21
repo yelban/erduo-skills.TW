@@ -127,11 +127,12 @@
       "tier": 3,
       "batch": null,
       "fetch_method": "browser",
+      "requires_real_browser": true,
       "extract": "today_top_5",
       "enabled": true,
       "avg_quality": 4.2,
       "success_rate": 0.75,
-      "note": "需要瀏覽器抓取（agent-browser 優先），403 on WebFetch"
+      "note": "Cloudflare 防護，agent-browser 被攔截，需用 claude-in-chrome"
     },
     {
       "id": "latent_space",
@@ -140,11 +141,12 @@
       "tier": 3,
       "batch": null,
       "fetch_method": "browser",
+      "requires_real_browser": false,
       "extract": "latest_3",
       "enabled": true,
       "avg_quality": 4.6,
       "success_rate": 0.70,
-      "note": "Substack 需要 JS 渲染"
+      "note": "Substack JS 渲染，agent-browser 可正常處理"
     },
     {
       "id": "tldr_ai",

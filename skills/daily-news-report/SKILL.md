@@ -85,6 +85,7 @@ allowed-tools: Task, WebFetch, Read, Write, Bash(mkdir*), Bash(date*), Bash(ls*)
       "tier": 1,                     // 優先順序（1 最高，null 停用）
       "batch": "a",                  // 並行分組（同 tier 內 a/b 並行）
       "fetch_method": "webfetch",    // 抓取方式：webfetch | browser
+      "requires_real_browser": false,// 僅 browser 用：true=claude-in-chrome, false=agent-browser
       "extract": "top_10",           // 截取規則
       "enabled": true                // 是否啟用
     }
@@ -93,6 +94,7 @@ allowed-tools: Task, WebFetch, Read, Write, Bash(mkdir*), Bash(date*), Bash(ls*)
 ```
 
 **新增來源**：只需在 `sources` 陣列加一筆，設定 `tier`、`batch`、`enabled: true`
+**瀏覽器來源**：若 `fetch_method: "browser"`，需設定 `requires_real_browser`（Cloudflare 等防護需設 `true`）
 
 ## 執行流程詳解
 
@@ -203,31 +205,35 @@ return_format: JSON
 
 ### Phase 6: 瀏覽器抓取 (JS 渲染頁面)
 
-對於需要 JS 渲染的頁面，按以下優先順序抓取：
+對於 `fetch_method: "browser"` 的來源，根據 `requires_real_browser` 欄位選擇工具：
 
 ```yaml
-抓取順序:
-  1. WebFetch      # 最快，適合靜態頁面（tier1/tier2）
-  2. agent-browser # Headless 瀏覽器，適合 JS 渲染（tier3_browser 首選）
-  3. claude-in-chrome # 用戶實際 Chrome，fallback 或需登入場景
+決策邏輯:
+  if source.requires_real_browser == true:
+    使用 claude-in-chrome  # 真實瀏覽器，可通過 Cloudflare 等防護
+  else:
+    使用 agent-browser     # Headless 瀏覽器，速度較快
+    if agent-browser 失敗:
+      fallback 到 claude-in-chrome
 
-agent-browser 流程（首選）:
-  1. 呼叫 Skill(agent-browser) 導航到目標 URL
-  2. 等待頁面載入完成
-  3. 提取頁面內容
-  4. 返回結構化資料
+agent-browser 流程（requires_real_browser: false）:
+  1. agent-browser open <url>
+  2. agent-browser wait 3000
+  3. agent-browser snapshot -c（或處理彈窗後再 snapshot）
+  4. 解析 snapshot 提取文章列表
+  5. agent-browser close
 
-claude-in-chrome 流程（fallback）:
-  1. 呼叫 mcp__claude-in-chrome__tabs_context_mcp 取得現有 tab 資訊
-  2. 呼叫 mcp__claude-in-chrome__tabs_create_mcp 建立新 tab
-  3. 呼叫 mcp__claude-in-chrome__navigate 導航到目標 URL
-  4. 呼叫 mcp__claude-in-chrome__computer(action: wait, duration: 3) 等待載入
-  5. 呼叫 mcp__claude-in-chrome__read_page 取得頁面 accessibility tree
+claude-in-chrome 流程（requires_real_browser: true）:
+  1. mcp__claude-in-chrome__tabs_context_mcp 取得/建立 tab group
+  2. mcp__claude-in-chrome__tabs_create_mcp 建立新 tab
+  3. mcp__claude-in-chrome__navigate 導航到目標 URL
+  4. mcp__claude-in-chrome__computer(action: wait, duration: 3) 等待載入
+  5. mcp__claude-in-chrome__computer(action: screenshot) 確認頁面狀態
+  6. mcp__claude-in-chrome__read_page 或 find 提取內容
 
-適用場景:
-  - ProductHunt (403 on WebFetch)
-  - Latent Space (Substack JS 渲染)
-  - 其他 SPA 應用
+來源配置範例:
+  - ProductHunt: requires_real_browser: true  # Cloudflare 防護
+  - Latent Space: requires_real_browser: false # agent-browser 可處理
 ```
 
 ### Phase 7: 生成日報
