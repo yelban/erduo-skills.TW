@@ -714,6 +714,10 @@
       background: #4285F4;
     }
 
+    .tts-status-dot.gemini {
+      background: #8B5CF6;
+    }
+
     .tts-status-dot.web {
       background: #F59E0B;
     }
@@ -887,8 +891,9 @@
             <option value="web">Web Speech API（免費）</option>
             <option value="azure">Azure TTS（高品質）</option>
             <option value="google">Google Cloud TTS（免費額度多）</option>
+            <option value="gemini">Gemini TTS（最自然）</option>
           </select>
-          <p class="form-hint" id="engine-hint">選擇語音引擎，Azure 和 Google 都支援台灣腔調</p>
+          <p class="form-hint" id="engine-hint">Gemini TTS 最自然，可用提示控制語調</p>
         </div>
         <div id="azure-settings" class="form-group" style="display: none;">
           <label class="form-label" for="azure-key-input">Azure API Key</label>
@@ -904,6 +909,22 @@
           <label class="form-label" for="google-key-input">Google Cloud API Key</label>
           <input type="password" id="google-key-input" class="form-input" placeholder="輸入您的 Google Cloud API Key">
           <p class="form-hint">從 Google Cloud Console 取得 Text-to-Speech API Key（免費 100 萬字/月）</p>
+        </div>
+        <div id="gemini-settings" class="form-group" style="display: none;">
+          <label class="form-label" for="gemini-key-input">Gemini API Key</label>
+          <input type="password" id="gemini-key-input" class="form-input" placeholder="輸入您的 Gemini API Key">
+          <p class="form-hint">從 <a href="https://aistudio.google.com/apikey" target="_blank">AI Studio</a> 取得 API Key</p>
+        </div>
+        <div id="gemini-voice-settings" class="form-group" style="display: none;">
+          <label class="form-label" for="gemini-voice-select">語音角色</label>
+          <select id="gemini-voice-select" class="form-select">
+            <option value="Kore">Kore（女聲，溫暖）</option>
+            <option value="Charon">Charon（男聲，沉穩）</option>
+            <option value="Fenrir">Fenrir（男聲，有力）</option>
+            <option value="Aoede">Aoede（女聲，清亮）</option>
+            <option value="Puck">Puck（中性，活潑）</option>
+            <option value="Zephyr">Zephyr（中性，輕柔）</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label" for="speech-rate-select">語速</label>
@@ -1188,6 +1209,10 @@
     const azureRegionInput = document.getElementById('azure-region-input');
     const googleSettings = document.getElementById('google-settings');
     const googleKeyInput = document.getElementById('google-key-input');
+    const geminiSettings = document.getElementById('gemini-settings');
+    const geminiVoiceSettings = document.getElementById('gemini-voice-settings');
+    const geminiKeyInput = document.getElementById('gemini-key-input');
+    const geminiVoiceSelect = document.getElementById('gemini-voice-select');
     const speechRateSelect = document.getElementById('speech-rate-select');
     const testTtsBtn = document.getElementById('test-tts-btn');
 
@@ -1197,6 +1222,8 @@
       azureKey: '',
       azureRegion: 'eastasia',
       googleKey: '',
+      geminiKey: '',
+      geminiVoice: 'Kore',
       rate: 1
     };
     let isPlayingAll = false;
@@ -1231,6 +1258,9 @@
       } else if (ttsConfig.engine === 'google' && ttsConfig.googleKey) {
         ttsStatusDot.className = 'tts-status-dot google';
         ttsStatusText.textContent = 'Google TTS';
+      } else if (ttsConfig.engine === 'gemini' && ttsConfig.geminiKey) {
+        ttsStatusDot.className = 'tts-status-dot gemini';
+        ttsStatusText.textContent = 'Gemini TTS';
       } else {
         ttsStatusDot.className = 'tts-status-dot web';
         ttsStatusText.textContent = 'Web Speech';
@@ -1397,6 +1427,79 @@
       });
     }
 
+    // Gemini TTS
+    async function geminiTTS(text) {
+      const model = 'gemini-2.5-flash-preview-tts';
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${ttsConfig.geminiKey}`;
+
+      // 加入台灣腔調提示
+      const promptedText = `請用台灣口音、自然流暢地朗讀以下內容：\n\n${text}`;
+
+      const requestBody = {
+        contents: [{
+          parts: [{ text: promptedText }]
+        }],
+        generationConfig: {
+          responseModalities: ['AUDIO'],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: ttsConfig.geminiVoice
+              }
+            }
+          }
+        }
+      };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(`Gemini TTS 錯誤: ${response.status} - ${error.error?.message || '未知錯誤'}`);
+      }
+
+      const data = await response.json();
+
+      // 從回應中提取音訊資料
+      const audioData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      if (!audioData) {
+        throw new Error('Gemini TTS 未返回音訊資料');
+      }
+
+      // Base64 解碼並播放
+      const mimeType = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || 'audio/mp3';
+      const audioBlob = await fetch(`data:${mimeType};base64,${audioData}`).then(r => r.blob());
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      return new Promise((resolve, reject) => {
+        const audio = new Audio(audioUrl);
+        currentAudio = audio;
+
+        // 調整播放速度
+        audio.playbackRate = ttsConfig.rate;
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          currentAudio = null;
+          resolve();
+        };
+
+        audio.onerror = (e) => {
+          URL.revokeObjectURL(audioUrl);
+          currentAudio = null;
+          reject(new Error('音訊播放失敗'));
+        };
+
+        audio.play().catch(reject);
+      });
+    }
+
     // 統一 TTS 介面
     async function speak(text) {
       if (ttsConfig.engine === 'azure' && ttsConfig.azureKey) {
@@ -1411,6 +1514,13 @@
           await googleTTS(text);
         } catch (e) {
           console.warn('Google TTS 失敗，降級至 Web Speech API', e);
+          await webSpeechTTS(text);
+        }
+      } else if (ttsConfig.engine === 'gemini' && ttsConfig.geminiKey) {
+        try {
+          await geminiTTS(text);
+        } catch (e) {
+          console.warn('Gemini TTS 失敗，降級至 Web Speech API', e);
           await webSpeechTTS(text);
         }
       } else {
@@ -1695,6 +1805,8 @@
       azureKeyInput.value = ttsConfig.azureKey;
       azureRegionInput.value = ttsConfig.azureRegion;
       googleKeyInput.value = ttsConfig.googleKey;
+      geminiKeyInput.value = ttsConfig.geminiKey;
+      geminiVoiceSelect.value = ttsConfig.geminiVoice;
       speechRateSelect.value = ttsConfig.rate.toString();
 
       // 顯示/隱藏設定區塊
@@ -1706,9 +1818,12 @@
     function updateEngineSettings(engine) {
       const showAzure = engine === 'azure';
       const showGoogle = engine === 'google';
+      const showGemini = engine === 'gemini';
       azureSettings.style.display = showAzure ? 'block' : 'none';
       azureRegionSettings.style.display = showAzure ? 'block' : 'none';
       googleSettings.style.display = showGoogle ? 'block' : 'none';
+      geminiSettings.style.display = showGemini ? 'block' : 'none';
+      geminiVoiceSettings.style.display = showGemini ? 'block' : 'none';
     }
 
     function closeModal() {
@@ -1740,6 +1855,8 @@
       ttsConfig.azureKey = azureKeyInput.value;
       ttsConfig.azureRegion = azureRegionInput.value;
       ttsConfig.googleKey = googleKeyInput.value;
+      ttsConfig.geminiKey = geminiKeyInput.value;
+      ttsConfig.geminiVoice = geminiVoiceSelect.value;
       ttsConfig.rate = parseFloat(speechRateSelect.value);
 
       try {
@@ -1760,6 +1877,8 @@
       ttsConfig.azureKey = azureKeyInput.value;
       ttsConfig.azureRegion = azureRegionInput.value;
       ttsConfig.googleKey = googleKeyInput.value;
+      ttsConfig.geminiKey = geminiKeyInput.value;
+      ttsConfig.geminiVoice = geminiVoiceSelect.value;
       ttsConfig.rate = parseFloat(speechRateSelect.value);
 
       saveTtsConfig();
