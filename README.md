@@ -87,6 +87,7 @@ graph TD
 | Azure TTS | 高 | 免費 50 萬字/月 | `zh-TW-HsiaoChenNeural` 語音 |
 | Google Cloud TTS | 高 | 免費 100 萬字/月 | `cmn-TW-Wavenet-A` 語音 |
 | Gemini TTS | 極高 | 免費額度 | 6 種語音角色，最自然 |
+| Fish Audio | 極高 | 免費額度 | 社群台灣腔模型，生活感強 |
 
 **播放內容**：標題 + 摘要 + 要點（排除來源連結、關鍵詞、評分）
 

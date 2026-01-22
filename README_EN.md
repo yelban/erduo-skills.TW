@@ -87,6 +87,7 @@ The report reader includes built-in text-to-speech functionality with Taiwanese 
 | Azure TTS | High | Free 500K chars/month | `zh-TW-HsiaoChenNeural` voice |
 | Google Cloud TTS | High | Free 1M chars/month | `cmn-TW-Wavenet-A` voice |
 | Gemini TTS | Excellent | Free tier | 6 voice options, most natural |
+| Fish Audio | Excellent | Free tier | Community Taiwan accent models |
 
 **Playback Content**: Title + Summary + Key Points (excludes source links, keywords, ratings)
 

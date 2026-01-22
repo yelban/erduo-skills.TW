@@ -718,6 +718,10 @@
       background: #8B5CF6;
     }
 
+    .tts-status-dot.fish {
+      background: #06B6D4;
+    }
+
     .tts-status-dot.web {
       background: #F59E0B;
     }
@@ -892,6 +896,7 @@
             <option value="azure">Azure TTS（高品質）</option>
             <option value="google">Google Cloud TTS（免費額度多）</option>
             <option value="gemini">Gemini TTS（最自然）</option>
+            <option value="fish">Fish Audio（台灣腔）</option>
           </select>
           <p class="form-hint" id="engine-hint">Gemini TTS 最自然，可用提示控制語調</p>
         </div>
@@ -925,6 +930,16 @@
             <option value="Puck">Puck（中性，活潑）</option>
             <option value="Zephyr">Zephyr（中性，輕柔）</option>
           </select>
+        </div>
+        <div id="fish-settings" class="form-group" style="display: none;">
+          <label class="form-label" for="fish-key-input">Fish Audio API Key</label>
+          <input type="password" id="fish-key-input" class="form-input" placeholder="輸入您的 Fish Audio API Key">
+          <p class="form-hint">從 <a href="https://fish.audio/zh-TW/" target="_blank">Fish Audio</a> 取得 API Key</p>
+        </div>
+        <div id="fish-voice-settings" class="form-group" style="display: none;">
+          <label class="form-label" for="fish-voice-input">語音模型 ID</label>
+          <input type="text" id="fish-voice-input" class="form-input" placeholder="輸入語音模型 ID（如：台灣女生）">
+          <p class="form-hint">在 <a href="https://fish.audio/zh-TW/discover" target="_blank">Fish Audio 發現</a> 搜尋「台灣」找到喜歡的語音</p>
         </div>
         <div class="form-group">
           <label class="form-label" for="speech-rate-select">語速</label>
@@ -1213,6 +1228,10 @@
     const geminiVoiceSettings = document.getElementById('gemini-voice-settings');
     const geminiKeyInput = document.getElementById('gemini-key-input');
     const geminiVoiceSelect = document.getElementById('gemini-voice-select');
+    const fishSettings = document.getElementById('fish-settings');
+    const fishVoiceSettings = document.getElementById('fish-voice-settings');
+    const fishKeyInput = document.getElementById('fish-key-input');
+    const fishVoiceInput = document.getElementById('fish-voice-input');
     const speechRateSelect = document.getElementById('speech-rate-select');
     const testTtsBtn = document.getElementById('test-tts-btn');
 
@@ -1224,6 +1243,8 @@
       googleKey: '',
       geminiKey: '',
       geminiVoice: 'Kore',
+      fishKey: '',
+      fishVoice: '',
       rate: 1
     };
     let isPlayingAll = false;
@@ -1261,6 +1282,9 @@
       } else if (ttsConfig.engine === 'gemini' && ttsConfig.geminiKey) {
         ttsStatusDot.className = 'tts-status-dot gemini';
         ttsStatusText.textContent = 'Gemini TTS';
+      } else if (ttsConfig.engine === 'fish' && ttsConfig.fishKey) {
+        ttsStatusDot.className = 'tts-status-dot fish';
+        ttsStatusText.textContent = 'Fish Audio';
       } else {
         ttsStatusDot.className = 'tts-status-dot web';
         ttsStatusText.textContent = 'Web Speech';
@@ -1552,6 +1576,62 @@
       });
     }
 
+    // Fish Audio TTS
+    async function fishAudioTTS(text) {
+      const endpoint = 'https://api.fish.audio/v1/tts';
+
+      const requestBody = {
+        text: text,
+        format: 'mp3',
+        mp3_bitrate: 128,
+        normalize: true,
+        latency: 'normal'
+      };
+
+      // 如果有指定語音模型 ID
+      if (ttsConfig.fishVoice) {
+        requestBody.reference_id = ttsConfig.fishVoice;
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${ttsConfig.fishKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(`Fish Audio 錯誤: ${response.status} - ${error.message || '未知錯誤'}`);
+      }
+
+      // Fish Audio 直接返回音訊資料
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      return new Promise((resolve, reject) => {
+        const audio = new Audio(audioUrl);
+        currentAudio = audio;
+        audio.playbackRate = ttsConfig.rate;
+
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          currentAudio = null;
+          resolve();
+        };
+
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          currentAudio = null;
+          reject(new Error('Fish Audio 播放失敗'));
+        };
+
+        audio.play().catch(reject);
+      });
+    }
+
     // 統一 TTS 介面
     async function speak(text) {
       if (ttsConfig.engine === 'azure' && ttsConfig.azureKey) {
@@ -1573,6 +1653,13 @@
           await geminiTTS(text);
         } catch (e) {
           console.warn('Gemini TTS 失敗，降級至 Web Speech API', e);
+          await webSpeechTTS(text);
+        }
+      } else if (ttsConfig.engine === 'fish' && ttsConfig.fishKey) {
+        try {
+          await fishAudioTTS(text);
+        } catch (e) {
+          console.warn('Fish Audio 失敗，降級至 Web Speech API', e);
           await webSpeechTTS(text);
         }
       } else {
@@ -1859,6 +1946,8 @@
       googleKeyInput.value = ttsConfig.googleKey;
       geminiKeyInput.value = ttsConfig.geminiKey;
       geminiVoiceSelect.value = ttsConfig.geminiVoice;
+      fishKeyInput.value = ttsConfig.fishKey;
+      fishVoiceInput.value = ttsConfig.fishVoice;
       speechRateSelect.value = ttsConfig.rate.toString();
 
       // 顯示/隱藏設定區塊
@@ -1871,11 +1960,14 @@
       const showAzure = engine === 'azure';
       const showGoogle = engine === 'google';
       const showGemini = engine === 'gemini';
+      const showFish = engine === 'fish';
       azureSettings.style.display = showAzure ? 'block' : 'none';
       azureRegionSettings.style.display = showAzure ? 'block' : 'none';
       googleSettings.style.display = showGoogle ? 'block' : 'none';
       geminiSettings.style.display = showGemini ? 'block' : 'none';
       geminiVoiceSettings.style.display = showGemini ? 'block' : 'none';
+      fishSettings.style.display = showFish ? 'block' : 'none';
+      fishVoiceSettings.style.display = showFish ? 'block' : 'none';
     }
 
     function closeModal() {
@@ -1909,6 +2001,8 @@
       ttsConfig.googleKey = googleKeyInput.value;
       ttsConfig.geminiKey = geminiKeyInput.value;
       ttsConfig.geminiVoice = geminiVoiceSelect.value;
+      ttsConfig.fishKey = fishKeyInput.value;
+      ttsConfig.fishVoice = fishVoiceInput.value;
       ttsConfig.rate = parseFloat(speechRateSelect.value);
 
       try {
@@ -1931,6 +2025,8 @@
       ttsConfig.googleKey = googleKeyInput.value;
       ttsConfig.geminiKey = geminiKeyInput.value;
       ttsConfig.geminiVoice = geminiVoiceSelect.value;
+      ttsConfig.fishKey = fishKeyInput.value;
+      ttsConfig.fishVoice = fishVoiceInput.value;
       ttsConfig.rate = parseFloat(speechRateSelect.value);
 
       saveTtsConfig();
