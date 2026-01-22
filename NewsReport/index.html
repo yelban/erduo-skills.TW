@@ -910,6 +910,11 @@
           <input type="text" id="azure-region-input" class="form-input" placeholder="eastasia" value="eastasia">
           <p class="form-hint">例如：eastasia、southeastasia、westus</p>
         </div>
+        <div id="azure-proxy-settings" class="form-group" style="display: none;">
+          <label class="form-label" for="azure-proxy-input">代理 URL（選填）</label>
+          <input type="text" id="azure-proxy-input" class="form-input" placeholder="https://azure-tts.twampd.workers.dev">
+          <p class="form-hint">使用代理時無需輸入 API Key，Key 由代理伺服器管理</p>
+        </div>
         <div id="google-settings" class="form-group" style="display: none;">
           <label class="form-label" for="google-key-input">Google Cloud API Key</label>
           <input type="password" id="google-key-input" class="form-input" placeholder="輸入您的 Google Cloud API Key">
@@ -943,7 +948,7 @@
         </div>
         <div id="fish-proxy-settings" class="form-group" style="display: none;">
           <label class="form-label" for="fish-proxy-input">代理 URL（選填）</label>
-          <input type="text" id="fish-proxy-input" class="form-input" placeholder="https://your-proxy.workers.dev">
+          <input type="text" id="fish-proxy-input" class="form-input" placeholder="https://fish-tts.twampd.workers.dev">
           <p class="form-hint">瀏覽器有 CORS 限制，需透過代理呼叫。留空則自動降級至 Web Speech API</p>
         </div>
         <div class="form-group">
@@ -980,28 +985,41 @@
     // 按月份分組的報告
     let groupedByMonth = {};
 
-    // 嘗試探測存在的報告（從最近日期往前檢查）
+    // 從索引檔載入報告列表
     async function detectReports() {
+      try {
+        const response = await fetch('reports.json');
+        if (!response.ok) {
+          console.warn('無法載入 reports.json，回退到輪詢模式');
+          return await detectReportsFallback();
+        }
+        const data = await response.json();
+        return data.reports.map(date => ({
+          filename: `${date}-news-report`,
+          date: date
+        }));
+      } catch (e) {
+        console.warn('載入報告索引失敗，回退到輪詢模式', e);
+        return await detectReportsFallback();
+      }
+    }
+
+    // 備援：輪詢檢查報告（僅在 reports.json 不存在時使用）
+    async function detectReportsFallback() {
       const today = new Date();
       const reports = [];
-
-      // 檢查最近 30 天的報告
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 7; i++) {  // 減少到 7 天
         const date = new Date(today);
         date.setDate(date.getDate() - i);
         const dateStr = date.toISOString().split('T')[0];
         const filename = `${dateStr}-news-report`;
-
         try {
           const response = await fetch(`${filename}.md`, { method: 'HEAD' });
           if (response.ok) {
             reports.push({ filename, date: dateStr });
           }
-        } catch (e) {
-          // 忽略錯誤
-        }
+        } catch (e) {}
       }
-
       return reports;
     }
 
@@ -1225,8 +1243,10 @@
     const ttsEngineSelect = document.getElementById('tts-engine-select');
     const azureSettings = document.getElementById('azure-settings');
     const azureRegionSettings = document.getElementById('azure-region-settings');
+    const azureProxySettings = document.getElementById('azure-proxy-settings');
     const azureKeyInput = document.getElementById('azure-key-input');
     const azureRegionInput = document.getElementById('azure-region-input');
+    const azureProxyInput = document.getElementById('azure-proxy-input');
     const googleSettings = document.getElementById('google-settings');
     const googleKeyInput = document.getElementById('google-key-input');
     const geminiSettings = document.getElementById('gemini-settings');
@@ -1245,15 +1265,16 @@
 
     // TTS 狀態
     let ttsConfig = {
-      engine: 'web',
+      engine: 'azure',
       azureKey: '',
       azureRegion: 'eastasia',
+      azureProxy: 'https://azure-tts.twampd.workers.dev',
       googleKey: '',
       geminiKey: '',
       geminiVoice: 'Kore',
       fishKey: '',
       fishVoice: '',
-      fishProxy: '',
+      fishProxy: 'https://fish-tts.twampd.workers.dev',
       rate: 1
     };
     let isPlayingAll = false;
@@ -1282,7 +1303,7 @@
 
     // 更新狀態顯示
     function updateTtsStatus() {
-      if (ttsConfig.engine === 'azure' && ttsConfig.azureKey) {
+      if (ttsConfig.engine === 'azure' && (ttsConfig.azureKey || ttsConfig.azureProxy)) {
         ttsStatusDot.className = 'tts-status-dot azure';
         ttsStatusText.textContent = 'Azure TTS';
       } else if (ttsConfig.engine === 'google' && ttsConfig.googleKey) {
@@ -1349,8 +1370,6 @@
 
     // Azure TTS
     async function azureTTS(text) {
-      const endpoint = `https://${ttsConfig.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`;
-
       // SSML 格式
       const ssml = `
         <speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='zh-TW'>
@@ -1362,15 +1381,29 @@
         </speak>
       `;
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Ocp-Apim-Subscription-Key': ttsConfig.azureKey,
-          'Content-Type': 'application/ssml+xml',
-          'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3'
-        },
-        body: ssml
-      });
+      let response;
+      if (ttsConfig.azureProxy) {
+        // 使用代理（代理伺服器管理 API Key）
+        response = await fetch(ttsConfig.azureProxy, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/ssml+xml'
+          },
+          body: ssml
+        });
+      } else {
+        // 直接呼叫 Azure（需要 API Key）
+        const endpoint = `https://${ttsConfig.azureRegion}.tts.speech.microsoft.com/cognitiveservices/v1`;
+        response = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Ocp-Apim-Subscription-Key': ttsConfig.azureKey,
+            'Content-Type': 'application/ssml+xml',
+            'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3'
+          },
+          body: ssml
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`Azure TTS 錯誤: ${response.status}`);
@@ -1649,7 +1682,7 @@
 
     // 統一 TTS 介面
     async function speak(text) {
-      if (ttsConfig.engine === 'azure' && ttsConfig.azureKey) {
+      if (ttsConfig.engine === 'azure' && (ttsConfig.azureKey || ttsConfig.azureProxy)) {
         try {
           await azureTTS(text);
         } catch (e) {
@@ -1958,6 +1991,7 @@
       ttsEngineSelect.value = ttsConfig.engine;
       azureKeyInput.value = ttsConfig.azureKey;
       azureRegionInput.value = ttsConfig.azureRegion;
+      azureProxyInput.value = ttsConfig.azureProxy;
       googleKeyInput.value = ttsConfig.googleKey;
       geminiKeyInput.value = ttsConfig.geminiKey;
       geminiVoiceSelect.value = ttsConfig.geminiVoice;
@@ -1979,6 +2013,7 @@
       const showFish = engine === 'fish';
       azureSettings.style.display = showAzure ? 'block' : 'none';
       azureRegionSettings.style.display = showAzure ? 'block' : 'none';
+      azureProxySettings.style.display = showAzure ? 'block' : 'none';
       googleSettings.style.display = showGoogle ? 'block' : 'none';
       geminiSettings.style.display = showGemini ? 'block' : 'none';
       geminiVoiceSettings.style.display = showGemini ? 'block' : 'none';
@@ -2025,6 +2060,7 @@
       ttsConfig.engine = ttsEngineSelect.value;
       ttsConfig.azureKey = azureKeyInput.value;
       ttsConfig.azureRegion = azureRegionInput.value;
+      ttsConfig.azureProxy = azureProxyInput.value;
       ttsConfig.googleKey = googleKeyInput.value;
       ttsConfig.geminiKey = geminiKeyInput.value;
       ttsConfig.geminiVoice = geminiVoiceSelect.value;
@@ -2050,6 +2086,7 @@
       ttsConfig.engine = ttsEngineSelect.value;
       ttsConfig.azureKey = azureKeyInput.value;
       ttsConfig.azureRegion = azureRegionInput.value;
+      ttsConfig.azureProxy = azureProxyInput.value;
       ttsConfig.googleKey = googleKeyInput.value;
       ttsConfig.geminiKey = geminiKeyInput.value;
       ttsConfig.geminiVoice = geminiVoiceSelect.value;
