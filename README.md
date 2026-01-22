@@ -60,7 +60,7 @@ graph TD
 
 日報以結構化 Markdown 格式生成，儲存在 `NewsReport/` 目錄下。
 
-> **Daily News Report (2024-03-21)**
+> **Daily Picks AI News (2024-03-21)**
 >
 > **1. 文章標題**
 > - **摘要**: 文章內容的簡要總結...
@@ -133,6 +133,58 @@ mkdir -p NewsReport
 啟動 Claude Code 後，直接輸入：
 
 > "生成今天的日報。"
+
+---
+
+## 🔄 外部觸發方式
+
+除了在 Claude Code 互動介面中執行，還可以透過以下方式觸發日報生成：
+
+| 方案 | 適用場景 | 瀏覽器抓取 |
+|------|----------|-----------|
+| A. CLI 指令 | 手動觸發 | ✅ 完整支援 |
+| B. Cron 排程 | 本地定時 | ⚠️ 需 headless |
+| C. GitHub Actions | 雲端定時 | ❌ 僅 Tier1/2 |
+
+### 方案 A：CLI 指令
+
+```bash
+# 基本用法
+cd /path/to/erduo-skills.TW && claude -p "生成今天的日報"
+
+# 進階選項
+claude -p "生成今天的日報" --output-format json --max-turns 25
+
+# 自動核准工具
+claude -p "生成今天的日報" \
+  --allowedTools "Task,WebFetch,Read,Write,Bash(mkdir*),Bash(date*),Bash(ls*)"
+```
+
+### 方案 B：Cron 本地排程
+
+使用 `scripts/generate-daily-report.sh` 腳本：
+
+```bash
+# 設定 crontab（每天 08:00 執行）
+crontab -e
+# 加入：0 8 * * * /path/to/erduo-skills.TW/scripts/generate-daily-report.sh
+```
+
+執行紀錄會存放在 `logs/` 目錄。
+
+### 方案 C：GitHub Actions
+
+本專案已配置 `.github/workflows/daily-report.yml`，支援：
+
+- **定時執行**：每天 UTC 00:00（台灣 08:00）
+- **手動觸發**：GitHub repo → Actions → Daily Picks AI News → Run workflow
+
+⚠️ **注意**：GitHub Actions 無法執行瀏覽器自動化，僅抓取 Tier1/Tier2 來源。
+
+**設定步驟**：
+1. Fork 本專案
+2. 在 repo Settings → Secrets 新增 `ANTHROPIC_API_KEY`
+3. 啟用 Actions 權限
 
 ## 🤝 貢獻指南
 

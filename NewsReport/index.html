@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Picks AI News</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    :root {
+      --primary: #3B82F6;
+      --primary-hover: #2563EB;
+      --secondary: #60A5FA;
+      --cta: #F97316;
+      --background: #F8FAFC;
+      --surface: #FFFFFF;
+      --text: #1E293B;
+      --text-muted: #64748B;
+      --border: #E2E8F0;
+      --code-bg: #F1F5F9;
+      --max-width: 800px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #0F172A;
+        --surface: #1E293B;
+        --text: #F1F5F9;
+        --text-muted: #94A3B8;
+        --border: #334155;
+        --code-bg: #334155;
+      }
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    body {
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+      color: var(--text);
+      background-color: var(--background);
+      min-height: 100vh;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 1.5rem;
+    }
+
+    .header-content {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .logo {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 200ms ease;
+    }
+
+    .logo:hover {
+      color: var(--primary);
+    }
+
+    .logo svg {
+      width: 24px;
+      height: 24px;
+      color: var(--primary);
+    }
+
+    .file-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-selector label {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .file-selector select {
+      padding: 0.5rem 2rem 0.5rem 0.75rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 200ms ease;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.5rem center;
+      background-size: 1rem;
+    }
+
+    .file-selector select:hover,
+    .file-selector select:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .nav-btn {
+      padding: 0.5rem 0.75rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 200ms ease, opacity 200ms ease;
+      line-height: 1;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    main {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .loading,
+    .error,
+    .empty {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .error {
+      color: #EF4444;
+    }
+
+    .error svg,
+    .empty svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .content {
+      animation: fadeIn 300ms ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .content h1 {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      line-height: 1.3;
+      color: var(--text);
+    }
+
+    .content h2 {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin: 2.5rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary);
+      color: var(--text);
+    }
+
+    .content h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 2rem 0 0.75rem;
+      color: var(--text);
+    }
+
+    .content h4 {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin: 1.5rem 0 0.5rem;
+      color: var(--text);
+    }
+
+    .content p {
+      margin-bottom: 1rem;
+    }
+
+    .content a {
+      color: var(--primary);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 200ms ease;
+    }
+
+    .content a:hover {
+      border-bottom-color: var(--primary);
+    }
+
+    .content ul,
+    .content ol {
+      margin: 1rem 0;
+      padding-left: 1.5rem;
+    }
+
+    .content li {
+      margin-bottom: 0.5rem;
+    }
+
+    .content li > ul,
+    .content li > ol {
+      margin: 0.5rem 0;
+    }
+
+    .content blockquote {
+      margin: 1.5rem 0;
+      padding: 1rem 1.5rem;
+      border-left: 4px solid var(--primary);
+      background: var(--code-bg);
+      border-radius: 0 6px 6px 0;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .content code {
+      font-family: 'SF Mono', Menlo, Monaco, monospace;
+      font-size: 0.875em;
+      padding: 0.2em 0.4em;
+      background: var(--code-bg);
+      border-radius: 4px;
+    }
+
+    .content pre {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: var(--code-bg);
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+
+    .content pre code {
+      padding: 0;
+      background: none;
+    }
+
+    .content hr {
+      margin: 2rem 0;
+      border: none;
+      border-top: 1px solid var(--border);
+    }
+
+    .content table {
+      width: 100%;
+      margin: 1.5rem 0;
+      border-collapse: collapse;
+      font-size: 0.9375rem;
+    }
+
+    .content th,
+    .content td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .content th {
+      font-weight: 600;
+      background: var(--code-bg);
+    }
+
+    .content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      margin: 1rem 0;
+    }
+
+    .content strong {
+      font-weight: 600;
+    }
+
+    footer {
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    footer a {
+      color: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
+      transition: color 200ms ease;
+    }
+
+    footer a:hover {
+      color: var(--primary-hover);
+    }
+
+    @media (max-width: 640px) {
+      .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .content h1 {
+        font-size: 1.5rem;
+      }
+
+      .content h2 {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <a href="index.html" class="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 0 1-2.25 2.25M16.5 7.5V18a2.25 2.25 0 0 0 2.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 0 0 2.25 2.25h13.5M6 7.5h3v3H6v-3Z" />
+        </svg>
+        Daily Picks AI News
+      </a>
+      <div class="file-selector">
+        <button id="prev-btn" class="nav-btn" aria-label="上一篇" disabled>←</button>
+        <select id="month-select" aria-label="選擇月份"></select>
+        <select id="day-select" aria-label="選擇日期"></select>
+        <button id="next-btn" class="nav-btn" aria-label="下一篇" disabled>→</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div class="empty">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+      </svg>
+      <p>請選擇報告檔案</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>Powered by <a href="https://github.com/yelban/erduo-skills.TW">吹水乜野</a></p>
+  </footer>
+
+  <script>
+    const main = document.getElementById('main');
+    const monthSelect = document.getElementById('month-select');
+    const daySelect = document.getElementById('day-select');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    // 儲存報告列表供導航使用
+    let reportsList = [];
+    // 按月份分組的報告
+    let groupedByMonth = {};
+
+    // 嘗試探測存在的報告（從最近日期往前檢查）
+    async function detectReports() {
+      const today = new Date();
+      const reports = [];
+
+      // 檢查最近 30 天的報告
+      for (let i = 0; i < 30; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        const filename = `${dateStr}-news-report`;
+
+        try {
+          const response = await fetch(`${filename}.md`, { method: 'HEAD' });
+          if (response.ok) {
+            reports.push({ filename, date: dateStr });
+          }
+        } catch (e) {
+          // 忽略錯誤
+        }
+      }
+
+      return reports;
+    }
+
+    // 取得當前選中的 filename
+    function getCurrentFilename() {
+      const month = monthSelect.value;
+      const day = daySelect.value;
+      if (!month || !day) return null;
+      return `${month}-${day}-news-report`;
+    }
+
+    // 根據月份填充日期選單
+    function populateDaySelect(month, selectedDay = null) {
+      const days = groupedByMonth[month] || [];
+
+      if (days.length === 0) {
+        daySelect.innerHTML = '<option value="">無可用日期</option>';
+        return;
+      }
+
+      daySelect.innerHTML = days.map(r => {
+        const day = r.date.slice(8, 10); // "DD"
+        return `<option value="${day}">${day}</option>`;
+      }).join('');
+
+      // 設定選中的日期
+      if (selectedDay && days.some(r => r.date.slice(8, 10) === selectedDay)) {
+        daySelect.value = selectedDay;
+      } else {
+        // 預設選第一天（該月最新）
+        daySelect.value = days[0].date.slice(8, 10);
+      }
+    }
+
+    // 填充月份選單
+    async function populateSelect() {
+      const reports = await detectReports();
+      reportsList = reports;
+
+      if (reports.length === 0) {
+        monthSelect.innerHTML = '<option value="">無可用報告</option>';
+        daySelect.innerHTML = '<option value=""></option>';
+        updateNavButtons();
+        return;
+      }
+
+      // 按月份分組
+      groupedByMonth = {};
+      reports.forEach(r => {
+        const month = r.date.slice(0, 7); // "YYYY-MM"
+        if (!groupedByMonth[month]) groupedByMonth[month] = [];
+        groupedByMonth[month].push(r);
+      });
+
+      // 填充月份選單（降序：最新在前）
+      const months = Object.keys(groupedByMonth).sort((a, b) => b.localeCompare(a));
+      monthSelect.innerHTML = months.map(month =>
+        `<option value="${month}">${month}</option>`
+      ).join('');
+
+      // 檢查 URL 參數
+      const params = new URLSearchParams(window.location.search);
+      const fileParam = params.get('file');
+
+      if (fileParam && reports.some(r => r.filename === fileParam)) {
+        // 從 filename 解析月份和日期
+        const match = fileParam.match(/^(\d{4}-\d{2})-(\d{2})-news-report$/);
+        if (match) {
+          const [, month, day] = match;
+          monthSelect.value = month;
+          populateDaySelect(month, day);
+          loadReport(fileParam);
+        }
+      } else if (reports.length > 0) {
+        // 預設載入最新報告
+        monthSelect.value = months[0];
+        populateDaySelect(months[0]);
+        loadReport(reports[0].filename);
+      }
+
+      updateNavButtons();
+    }
+
+    // 載入並渲染報告
+    async function loadReport(filename) {
+      if (!filename) return;
+
+      // 更新 URL（不重新載入頁面）
+      const url = new URL(window.location);
+      url.searchParams.set('file', filename);
+      window.history.pushState({}, '', url);
+
+      // 顯示載入中
+      main.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>載入中...</p>
+        </div>
+      `;
+
+      try {
+        const response = await fetch(`${filename}.md`);
+
+        if (!response.ok) {
+          throw new Error(`檔案不存在: ${filename}.md`);
+        }
+
+        let markdown = await response.text();
+
+        // 移除報告標頭的「生成耗時」和「早停觸發」行
+        markdown = markdown
+          .split('\n')
+          .filter(line => !line.match(/^>\s*(生成耗時|早停觸發)/))
+          .join('\n');
+
+        const html = marked.parse(markdown);
+
+        main.innerHTML = `<article class="content">${html}</article>`;
+
+        // 捲動到頂部
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      } catch (error) {
+        main.innerHTML = `
+          <div class="error">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+            </svg>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    // 更新導航按鈕狀態
+    // reportsList 按日期降序：[最新, ..., 最舊]
+    // ← (prev) 往舊 = index 增加，→ (next) 往新 = index 減少
+    function updateNavButtons() {
+      const currentFilename = getCurrentFilename();
+      const currentIndex = reportsList.findIndex(r => r.filename === currentFilename);
+      prevBtn.disabled = currentIndex < 0 || currentIndex >= reportsList.length - 1; // 已是最舊
+      nextBtn.disabled = currentIndex <= 0; // 已是最新
+    }
+
+    // 前後導航（支援跨月）
+    function navigateReport(direction) {
+      const currentFilename = getCurrentFilename();
+      const currentIndex = reportsList.findIndex(r => r.filename === currentFilename);
+      const newIndex = currentIndex + direction;
+
+      if (newIndex >= 0 && newIndex < reportsList.length) {
+        const newReport = reportsList[newIndex];
+        const newMonth = newReport.date.slice(0, 7);
+        const newDay = newReport.date.slice(8, 10);
+
+        // 若跨月，更新月份選單並重新填充日期
+        if (newMonth !== monthSelect.value) {
+          monthSelect.value = newMonth;
+          populateDaySelect(newMonth, newDay);
+        } else {
+          daySelect.value = newDay;
+        }
+
+        loadReport(newReport.filename);
+        updateNavButtons();
+      }
+    }
+
+    // 事件監聽
+    monthSelect.addEventListener('change', (e) => {
+      const month = e.target.value;
+      populateDaySelect(month);
+      const filename = getCurrentFilename();
+      loadReport(filename);
+      updateNavButtons();
+    });
+
+    daySelect.addEventListener('change', () => {
+      const filename = getCurrentFilename();
+      loadReport(filename);
+      updateNavButtons();
+    });
+
+    prevBtn.addEventListener('click', () => navigateReport(1));  // 往舊 = index +1
+    nextBtn.addEventListener('click', () => navigateReport(-1)); // 往新 = index -1
+
+    // 處理瀏覽器前進/後退
+    window.addEventListener('popstate', () => {
+      const params = new URLSearchParams(window.location.search);
+      const fileParam = params.get('file');
+      if (fileParam) {
+        const match = fileParam.match(/^(\d{4}-\d{2})-(\d{2})-news-report$/);
+        if (match) {
+          const [, month, day] = match;
+          monthSelect.value = month;
+          populateDaySelect(month, day);
+          loadReport(fileParam);
+          updateNavButtons();
+        }
+      }
+    });
+
+    // 初始化
+    populateSelect();
+  </script>
+</body>
+</html>

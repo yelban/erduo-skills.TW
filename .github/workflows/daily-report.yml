@@ -1,0 +1,32 @@
+name: Daily Picks AI News
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # UTC 00:00 = 台灣 08:00
+  workflow_dispatch:      # 手動觸發
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Report
+        uses: anthropics/claude-code-action@beta
+        with:
+          prompt: |
+            生成今天的日報。
+            注意：只使用 WebFetch 抓取 Tier1 和 Tier2 來源，跳過需要瀏覽器的 Tier3 來源（ProductHunt、Latent Space）。
+          allowed_tools: "Task,WebFetch,Read,Write,Bash(mkdir*),Bash(date*),Bash(ls*)"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Commit Report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add NewsReport/ skills/daily-news-report/cache.json
+          git diff --staged --quiet || git commit -m "chore: auto-generate daily report $(date +%Y-%m-%d)"
+          git push

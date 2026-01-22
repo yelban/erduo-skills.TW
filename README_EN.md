@@ -10,9 +10,9 @@
 
 ---
 
-## ✨ Featured Skill: Daily News Report
+## ✨ Featured Skill: Daily Picks AI News
 
-The **Daily News Report** is a sophisticated skill designed to autonomously fetch, filter, and summarize high-quality technical news from multiple sources.
+The **Daily Picks AI News** is a sophisticated skill designed to autonomously fetch, filter, and summarize high-quality technical news from multiple sources.
 
 ### 🏗 Architecture
 
@@ -60,7 +60,7 @@ graph TD
 
 Reports are generated in structured Markdown format, stored in the `NewsReport/` directory.
 
-> **Daily News Report (2024-03-21)**
+> **Daily Picks AI News (2024-03-21)**
 >
 > **1. Title of the Article**
 > - **Summary**: A concise summary of the article...
@@ -78,7 +78,7 @@ Reports are generated in structured Markdown format, stored in the `NewsReport/`
 ├── .claude/
 │   └── agents/       # Agent personas & prompts
 ├── skills/           # Executable skill definitions
-│   └── daily-news-report/  # The Daily News Report skill
+│   └── daily-news-report/  # The Daily Picks AI News skill
 ├── NewsReport/       # Generated daily reports
 ├── README.md         # Project documentation (Chinese by default)
 └── README_EN.md      # Project documentation (English)
@@ -133,6 +133,58 @@ mkdir -p NewsReport
 After starting Claude Code, simply type:
 
 > "Generate today's news report."
+
+---
+
+## 🔄 External Trigger Methods
+
+Besides running in Claude Code interactive mode, you can trigger report generation via:
+
+| Method | Use Case | Browser Fetch |
+|--------|----------|---------------|
+| A. CLI Command | Manual trigger | ✅ Full support |
+| B. Cron Schedule | Local scheduling | ⚠️ Headless only |
+| C. GitHub Actions | Cloud scheduling | ❌ Tier1/2 only |
+
+### Method A: CLI Command
+
+```bash
+# Basic usage
+cd /path/to/erduo-skills.TW && claude -p "Generate today's news report"
+
+# Advanced options
+claude -p "Generate today's news report" --output-format json --max-turns 25
+
+# Auto-approve tools
+claude -p "Generate today's news report" \
+  --allowedTools "Task,WebFetch,Read,Write,Bash(mkdir*),Bash(date*),Bash(ls*)"
+```
+
+### Method B: Cron Local Scheduling
+
+Use the `scripts/generate-daily-report.sh` script:
+
+```bash
+# Set up crontab (run daily at 08:00)
+crontab -e
+# Add: 0 8 * * * /path/to/erduo-skills.TW/scripts/generate-daily-report.sh
+```
+
+Execution logs are stored in the `logs/` directory.
+
+### Method C: GitHub Actions
+
+This project includes `.github/workflows/daily-report.yml` with:
+
+- **Scheduled execution**: Daily at UTC 00:00 (08:00 Taiwan time)
+- **Manual trigger**: GitHub repo → Actions → Daily Picks AI News → Run workflow
+
+⚠️ **Note**: GitHub Actions cannot run browser automation, only Tier1/Tier2 sources are fetched.
+
+**Setup steps**:
+1. Fork this repository
+2. Add `ANTHROPIC_API_KEY` in repo Settings → Secrets
+3. Enable Actions permissions
 
 ## 🤝 Contributing
 

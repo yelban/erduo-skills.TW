@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "description": "Daily News Report 快取檔案，用於避免重複抓取和跟蹤歷史表現",
+  "description": "Daily Picks AI News 快取檔案，用於避免重複抓取和跟蹤歷史表現",
 
   "last_run": {
     "date": "2026-01-22",

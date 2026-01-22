@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 專案概述
 
-**Erduo Skills** 是 AI Agent 技能庫，提供結構化能力與智慧工作流程。目前主要包含 **Daily News Report** 技能，用於自動抓取、篩選並彙總多來源技術新聞。
+**Erduo Skills** 是 AI Agent 技能庫，提供結構化能力與智慧工作流程。目前主要包含 **Daily Picks AI News** 技能，用於自動抓取、篩選並彙總多來源技術新聞。
 
 ## 架構
 
