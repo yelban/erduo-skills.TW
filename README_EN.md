@@ -91,9 +91,49 @@ The report reader includes built-in text-to-speech functionality with Taiwanese 
 
 **Playback Content**: Title + Summary + Key Points (excludes source links, keywords, ratings)
 
-> ⚠️ **Technical Notes**:
-> - Modern browser Autoplay Policy blocks audio playback without user interaction. Therefore, the auto-play feature shows a "Click to Start" overlay first, and playback begins only after user clicks.
-> - Fish Audio API encounters CORS restrictions when called directly from the browser. It will automatically fallback to Web Speech API. To use Fish Audio, consider setting up a backend proxy.
+> ⚠️ **Technical Note**: Modern browser Autoplay Policy blocks audio playback without user interaction. Therefore, the auto-play feature shows a "Click to Start" overlay first, and playback begins only after user clicks.
+
+**Fish Audio CORS Solution**:
+
+Fish Audio API encounters CORS restrictions when called directly from browsers. Solutions:
+
+1. **Configure Proxy URL** (Recommended): Enter proxy URL in voice settings
+2. **Auto Fallback**: Leave proxy empty, system falls back to Web Speech API
+
+<details>
+<summary>Cloudflare Workers Proxy Example (Free)</summary>
+
+```javascript
+// Deploy to Cloudflare Workers
+export default {
+  async fetch(request) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, model',
+        }
+      });
+    }
+    const response = await fetch('https://api.fish.audio/v1/tts', {
+      method: 'POST',
+      headers: {
+        'Authorization': request.headers.get('Authorization'),
+        'Content-Type': 'application/json',
+        'model': request.headers.get('model') || 's1',
+      },
+      body: request.body,
+    });
+    const newResponse = new Response(response.body, response);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return newResponse;
+  }
+};
+```
+
+After deployment, enter the Worker URL in the "Proxy URL" field.
+</details>
 
 ---
 

@@ -91,9 +91,49 @@ graph TD
 
 **播放內容**：標題 + 摘要 + 要點（排除來源連結、關鍵詞、評分）
 
-> ⚠️ **技術筆記**：
-> - 現代瀏覽器的自動播放政策（Autoplay Policy）會阻止沒有用戶互動的音訊播放。因此自動播放功能會先顯示「點擊開始播放」覆蓋層，用戶點擊後才開始播放。
-> - Fish Audio API 在瀏覽器端直接呼叫會遇到 CORS 限制，目前會自動降級至 Web Speech API。如需使用 Fish Audio，建議透過後端代理轉發請求。
+> ⚠️ **技術筆記**：現代瀏覽器的自動播放政策（Autoplay Policy）會阻止沒有用戶互動的音訊播放。因此自動播放功能會先顯示「點擊開始播放」覆蓋層，用戶點擊後才開始播放。
+
+**Fish Audio CORS 解決方案**：
+
+Fish Audio API 在瀏覽器端直接呼叫會遇到 CORS 限制。可透過以下方式解決：
+
+1. **設定代理 URL**（推薦）：在語音設定中填入代理 URL
+2. **自動降級**：留空代理 URL，系統會自動降級至 Web Speech API
+
+<details>
+<summary>Cloudflare Workers 代理範例（免費）</summary>
+
+```javascript
+// 部署到 Cloudflare Workers
+export default {
+  async fetch(request) {
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, model',
+        }
+      });
+    }
+    const response = await fetch('https://api.fish.audio/v1/tts', {
+      method: 'POST',
+      headers: {
+        'Authorization': request.headers.get('Authorization'),
+        'Content-Type': 'application/json',
+        'model': request.headers.get('model') || 's1',
+      },
+      body: request.body,
+    });
+    const newResponse = new Response(response.body, response);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return newResponse;
+  }
+};
+```
+
+部署後將 Worker URL 填入「代理 URL」欄位即可。
+</details>
 
 ---
 
