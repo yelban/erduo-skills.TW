@@ -941,6 +941,11 @@
           <input type="text" id="fish-voice-input" class="form-input" placeholder="輸入語音模型 ID（如：台灣女生）">
           <p class="form-hint">在 <a href="https://fish.audio/zh-TW/discover" target="_blank">Fish Audio 發現</a> 搜尋「台灣」找到喜歡的語音</p>
         </div>
+        <div id="fish-proxy-settings" class="form-group" style="display: none;">
+          <label class="form-label" for="fish-proxy-input">代理 URL（選填）</label>
+          <input type="text" id="fish-proxy-input" class="form-input" placeholder="https://your-proxy.workers.dev">
+          <p class="form-hint">瀏覽器有 CORS 限制，需透過代理呼叫。留空則自動降級至 Web Speech API</p>
+        </div>
         <div class="form-group">
           <label class="form-label" for="speech-rate-select">語速</label>
           <select id="speech-rate-select" class="form-select">
@@ -1230,8 +1235,10 @@
     const geminiVoiceSelect = document.getElementById('gemini-voice-select');
     const fishSettings = document.getElementById('fish-settings');
     const fishVoiceSettings = document.getElementById('fish-voice-settings');
+    const fishProxySettings = document.getElementById('fish-proxy-settings');
     const fishKeyInput = document.getElementById('fish-key-input');
     const fishVoiceInput = document.getElementById('fish-voice-input');
+    const fishProxyInput = document.getElementById('fish-proxy-input');
     const speechRateSelect = document.getElementById('speech-rate-select');
     const testTtsBtn = document.getElementById('test-tts-btn');
     const engineHint = document.getElementById('engine-hint');
@@ -1246,6 +1253,7 @@
       geminiVoice: 'Kore',
       fishKey: '',
       fishVoice: '',
+      fishProxy: '',
       rate: 1
     };
     let isPlayingAll = false;
@@ -1583,7 +1591,8 @@
         throw new Error('請先設定 Fish Audio API Key');
       }
 
-      const endpoint = 'https://api.fish.audio/v1/tts';
+      // 使用代理 URL 或原始 endpoint（原始會遇到 CORS 限制）
+      const endpoint = ttsConfig.fishProxy || 'https://api.fish.audio/v1/tts';
 
       const requestBody = {
         text: text,
@@ -1602,7 +1611,8 @@
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${ttsConfig.fishKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'model': 's1'
         },
         body: JSON.stringify(requestBody)
       });
@@ -1953,6 +1963,7 @@
       geminiVoiceSelect.value = ttsConfig.geminiVoice;
       fishKeyInput.value = ttsConfig.fishKey;
       fishVoiceInput.value = ttsConfig.fishVoice;
+      fishProxyInput.value = ttsConfig.fishProxy;
       speechRateSelect.value = ttsConfig.rate.toString();
 
       // 顯示/隱藏設定區塊
@@ -1973,6 +1984,7 @@
       geminiVoiceSettings.style.display = showGemini ? 'block' : 'none';
       fishSettings.style.display = showFish ? 'block' : 'none';
       fishVoiceSettings.style.display = showFish ? 'block' : 'none';
+      fishProxySettings.style.display = showFish ? 'block' : 'none';
 
       // 更新引擎說明
       const hints = {
@@ -2018,6 +2030,7 @@
       ttsConfig.geminiVoice = geminiVoiceSelect.value;
       ttsConfig.fishKey = fishKeyInput.value;
       ttsConfig.fishVoice = fishVoiceInput.value;
+      ttsConfig.fishProxy = fishProxyInput.value;
       ttsConfig.rate = parseFloat(speechRateSelect.value);
 
       try {
@@ -2042,6 +2055,7 @@
       ttsConfig.geminiVoice = geminiVoiceSelect.value;
       ttsConfig.fishKey = fishKeyInput.value;
       ttsConfig.fishVoice = fishVoiceInput.value;
+      ttsConfig.fishProxy = fishProxyInput.value;
       ttsConfig.rate = parseFloat(speechRateSelect.value);
 
       saveTtsConfig();
