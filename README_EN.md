@@ -64,11 +64,31 @@ Reports are generated in structured Markdown format, stored in the `NewsReport/`
 >
 > **1. Title of the Article**
 > - **Summary**: A concise summary of the article...
-> - **Key Points**: 
+> - **Key Points**:
 >   1. Point one
 >   2. Point two
-> - **Source**: [Link](...) 
+> - **Source**: [Link](...)
 > - **Rating**: ⭐⭐⭐⭐⭐
+
+### 🎧 Podcast Listening Feature
+
+The report reader includes built-in text-to-speech functionality with Taiwanese Mandarin voice.
+
+**Features**:
+- **Single Item Play**: Play button next to each news title for individual playback
+- **Play All**: Sequential playback of all news items (driving mode)
+- **Auto Play**: Enable to automatically start playback on page load
+- **Voice Settings**: Adjustable speech rate and TTS engine selection
+
+**TTS Engines**:
+| Engine | Quality | Cost | Notes |
+|--------|---------|------|-------|
+| Web Speech API | Medium | Free | Browser built-in, default option |
+| Azure TTS | High | Free 500K chars/month | `zh-TW-HsiaoChenNeural` voice |
+
+**Playback Content**: Title + Summary + Key Points (excludes source links, keywords, ratings)
+
+> ⚠️ **Technical Note**: Modern browser Autoplay Policy blocks audio playback without user interaction. Therefore, the auto-play feature shows a "Click to Start" overlay first, and playback begins only after user clicks.
 
 ---
 
