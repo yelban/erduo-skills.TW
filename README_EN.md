@@ -87,11 +87,13 @@ The report reader includes built-in text-to-speech functionality with Taiwanese 
 | Azure TTS | High | Free 500K chars/month | `zh-TW-HsiaoChenNeural` voice |
 | Google Cloud TTS | High | Free 1M chars/month | `cmn-TW-Wavenet-A` voice |
 | Gemini TTS | Excellent | Free tier | 6 voice options, most natural |
-| Fish Audio | Excellent | Free tier | Community Taiwan accent models |
+| Fish Audio | Excellent | Free tier | Community Taiwan accent models, requires proxy |
 
 **Playback Content**: Title + Summary + Key Points (excludes source links, keywords, ratings)
 
-> ⚠️ **Technical Note**: Modern browser Autoplay Policy blocks audio playback without user interaction. Therefore, the auto-play feature shows a "Click to Start" overlay first, and playback begins only after user clicks.
+> ⚠️ **Technical Notes**:
+> - Modern browser Autoplay Policy blocks audio playback without user interaction. Therefore, the auto-play feature shows a "Click to Start" overlay first, and playback begins only after user clicks.
+> - Fish Audio API encounters CORS restrictions when called directly from the browser. It will automatically fallback to Web Speech API. To use Fish Audio, consider setting up a backend proxy.
 
 ---
 

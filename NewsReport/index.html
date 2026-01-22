@@ -1234,6 +1234,7 @@
     const fishVoiceInput = document.getElementById('fish-voice-input');
     const speechRateSelect = document.getElementById('speech-rate-select');
     const testTtsBtn = document.getElementById('test-tts-btn');
+    const engineHint = document.getElementById('engine-hint');
 
     // TTS 狀態
     let ttsConfig = {
@@ -1578,6 +1579,10 @@
 
     // Fish Audio TTS
     async function fishAudioTTS(text) {
+      if (!ttsConfig.fishKey) {
+        throw new Error('請先設定 Fish Audio API Key');
+      }
+
       const endpoint = 'https://api.fish.audio/v1/tts';
 
       const requestBody = {
@@ -1968,6 +1973,16 @@
       geminiVoiceSettings.style.display = showGemini ? 'block' : 'none';
       fishSettings.style.display = showFish ? 'block' : 'none';
       fishVoiceSettings.style.display = showFish ? 'block' : 'none';
+
+      // 更新引擎說明
+      const hints = {
+        web: 'Web Speech API 免費且無需設定，品質視瀏覽器而定',
+        azure: 'Azure TTS 高品質，免費 50 萬字/月',
+        google: 'Google Cloud TTS 免費 100 萬字/月',
+        gemini: 'Gemini TTS 最自然，可用提示控制語調',
+        fish: 'Fish Audio 台灣腔模型，自然生活感'
+      };
+      engineHint.textContent = hints[engine] || '';
     }
 
     function closeModal() {
