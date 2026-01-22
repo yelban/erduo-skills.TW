@@ -85,6 +85,7 @@ The report reader includes built-in text-to-speech functionality with Taiwanese 
 |--------|---------|------|-------|
 | Web Speech API | Medium | Free | Browser built-in, default option |
 | Azure TTS | High | Free 500K chars/month | `zh-TW-HsiaoChenNeural` voice |
+| Google Cloud TTS | High | Free 1M chars/month | `cmn-TW-Wavenet-A` voice |
 
 **Playback Content**: Title + Summary + Key Points (excludes source links, keywords, ratings)
 
