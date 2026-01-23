@@ -985,10 +985,13 @@
     // 按月份分組的報告
     let groupedByMonth = {};
 
+    // Cache-busting 參數（每分鐘更新一次）
+    const cacheBuster = `?v=${Math.floor(Date.now() / 60000)}`;
+
     // 從索引檔載入報告列表
     async function detectReports() {
       try {
-        const response = await fetch('reports.json');
+        const response = await fetch('reports.json' + cacheBuster);
         if (!response.ok) {
           console.warn('無法載入 reports.json，回退到輪詢模式');
           return await detectReportsFallback();
@@ -1014,7 +1017,7 @@
         const dateStr = date.toISOString().split('T')[0];
         const filename = `${dateStr}-news-report`;
         try {
-          const response = await fetch(`${filename}.md`, { method: 'HEAD' });
+          const response = await fetch(`${filename}.md` + cacheBuster, { method: 'HEAD' });
           if (response.ok) {
             reports.push({ filename, date: dateStr });
           }
@@ -1121,7 +1124,7 @@
       `;
 
       try {
-        const response = await fetch(`${filename}.md`);
+        const response = await fetch(`${filename}.md` + cacheBuster);
 
         if (!response.ok) {
           throw new Error(`檔案不存在: ${filename}.md`);
